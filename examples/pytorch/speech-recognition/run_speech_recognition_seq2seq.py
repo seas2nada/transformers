@@ -494,6 +494,7 @@ def main():
         vectorized_datasets = raw_datasets.map(
             prepare_dataset,
             remove_columns=next(iter(raw_datasets.values())).column_names,
+            cache_file_names={"train":"/home/ubuntu/.cache/huggingface/datasets/librispeech_cache_base/train.arrow","eval":"/home/ubuntu/.cache/huggingface/datasets/librispeech_cache_base/eval.arrow"},
             num_proc=data_args.preprocessing_num_workers,
             desc="preprocess train dataset",
         )
