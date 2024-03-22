@@ -357,22 +357,28 @@ def main():
     raw_datasets = DatasetDict()
 
     if training_args.do_train:
-        raw_datasets["train"] = load_dataset(
-            data_args.dataset_name,
-            data_args.dataset_config_name,
-            split=data_args.train_split_name,
-            cache_dir=model_args.cache_dir,
-            token=model_args.token,
-        )
+        # raw_datasets["train"] = load_dataset(
+        #     data_args.dataset_name,
+        #     data_args.dataset_config_name,
+        #     split=data_args.train_split_name,
+        #     cache_dir=model_args.cache_dir,
+        #     token=model_args.token,
+        # )
+        json_file = os.path.join(data_args.dataset_name, data_args.train_split_name + '.json')
+        ds = load_dataset("json", data_files=json_file)
+        raw_datasets["train"] = ds["train"]
 
     if training_args.do_eval:
-        raw_datasets["eval"] = load_dataset(
-            data_args.dataset_name,
-            data_args.dataset_config_name,
-            split=data_args.eval_split_name,
-            cache_dir=model_args.cache_dir,
-            token=model_args.token,
-        )
+        # raw_datasets["eval"] = load_dataset(
+        #     data_args.dataset_name,
+        #     data_args.dataset_config_name,
+        #     split=data_args.eval_split_name,
+        #     cache_dir=model_args.cache_dir,
+        #     token=model_args.token,
+        # )
+        json_file = os.path.join(data_args.dataset_name, data_args.eval_split_name + '.json')
+        ds = load_dataset("json", data_files=json_file)
+        raw_datasets["eval"] = ds["train"]
 
     if data_args.audio_column_name not in next(iter(raw_datasets.values())).column_names:
         raise ValueError(
@@ -399,7 +405,6 @@ def main():
         token=model_args.token,
         trust_remote_code=model_args.trust_remote_code,
     )
-
     config.update({"forced_decoder_ids": model_args.forced_decoder_ids, "suppress_tokens": model_args.suppress_tokens})
 
     # SpecAugment for whisper models
@@ -445,11 +450,10 @@ def main():
         tokenizer.set_prefix_tokens(language=data_args.language, task=data_args.task)
 
     # 6. Resample speech dataset if necessary
-    dataset_sampling_rate = next(iter(raw_datasets.values())).features[data_args.audio_column_name].sampling_rate
-    if dataset_sampling_rate != feature_extractor.sampling_rate:
-        raw_datasets = raw_datasets.cast_column(
-            data_args.audio_column_name, datasets.features.Audio(sampling_rate=feature_extractor.sampling_rate)
-        )
+    # dataset_sampling_rate = next(iter(raw_datasets.values())).features[data_args.audio_column_name].sampling_rate
+    raw_datasets = raw_datasets.cast_column(
+        data_args.audio_column_name, datasets.features.Audio(sampling_rate=feature_extractor.sampling_rate)
+    )
 
     # 7. Preprocessing the datasets.
     # We need to read the audio files as arrays and tokenize the targets.
@@ -495,6 +499,7 @@ def main():
             prepare_dataset,
             remove_columns=next(iter(raw_datasets.values())).column_names,
             num_proc=data_args.preprocessing_num_workers,
+            cache_file_names={"train": "/home/ubuntu/.cache/huggingface/datasets/KlecSpeech_cache/train.arrow", "eval": "/home/ubuntu/.cache/huggingface/datasets/KlecSpeech_cache/eval.arrow"},
             desc="preprocess train dataset",
         )
 
@@ -594,6 +599,7 @@ def main():
             metric_key_prefix="eval",
             max_length=training_args.generation_max_length,
             num_beams=training_args.generation_num_beams,
+            language=data_args.language,
         )
         max_eval_samples = (
             data_args.max_eval_samples if data_args.max_eval_samples is not None else len(vectorized_datasets["eval"])

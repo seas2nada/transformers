@@ -1139,6 +1139,7 @@ class WhisperGenerationMixin:
             # TODO(Sanchit): set generation_config.forced_decoder_ids to None for v4.39
             generation_config.forced_decoder_ids = forced_decoder_ids if len(forced_decoder_ids) > 0 else None
 
+        language = "korean"
         is_lang_id_undefined = len(init_tokens) <= 1 or (len(init_tokens) > 1 and init_tokens[1] is None)
         if language is not None:
             if language in generation_config.lang_to_id.keys():

@@ -167,3 +167,10 @@ tags
 
 # ruff
 .ruff_cache
+
+tools/Miniconda*
+tools/venv
+tools/activate*
+
+examples/pytorch/speech-recognition/whisper-*
+examples/pytorch/speech-recognition/data

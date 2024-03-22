@@ -1,0 +1,19 @@
+torchrun \
+	--nproc_per_node $GPUS run_whisper_ctc.py \
+	--model_name_or_path="whisper-small-ctc-char-libri" \
+	--dataset_name=$data \
+	--dataset_config_name=$data_config \
+	--eval_split_name=$eval_subset \
+	--output_dir="./whisper-small-ctc-char-libri" \
+	--per_device_train_batch_size="16" \
+	--per_device_eval_batch_size="16" \
+	--length_column_name="input_length" \
+	--max_duration_in_seconds="30" \
+	--audio_column_name=$audio_column_name \
+	--text_column_name=$text_column_name \
+    --language=$language \
+	--do_lower_case="False" \
+	--group_by_length \
+	--fp16 \
+	--do_eval \
+	--use_auth_token
