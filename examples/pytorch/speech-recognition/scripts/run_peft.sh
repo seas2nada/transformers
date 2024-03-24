@@ -6,15 +6,16 @@ torchrun \
 	--dataset_config_name=$data_config \
 	--train_split_name=$train_subset \
 	--eval_split_name=$eval_subset \
-	--max_steps="30000" \
-	--output_dir="./whisper-large-KlecSpeech-peft-max30000-test" \
-	--per_device_train_batch_size="12" \
-	--per_device_eval_batch_size="12" \
+	--max_steps="10000" \
+	--output_dir="./whisper-large-KlecSpeech-peft-max10000-lr1e-3-batch256" \
+	--gradient_accumulation_steps="1" \
+	--per_device_train_batch_size="64" \
+	--per_device_eval_batch_size="64" \
 	--logging_steps="25" \
 	--learning_rate="1e-3" \
 	--warmup_steps="500" \
 	--evaluation_strategy="steps" \
-	--eval_steps="10" \
+	--eval_steps="5000" \
 	--save_strategy="steps" \
 	--save_steps="1000" \
 	--generation_max_length="225" \
@@ -31,6 +32,5 @@ torchrun \
 	--fp16 \
 	--overwrite_output_dir \
 	--do_train \
-	--do_eval \
 	--predict_with_generate \
 	--use_auth_token
