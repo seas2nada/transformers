@@ -1,7 +1,7 @@
 # --model_name_or_path="$PWD/whisper-large-500hFT" \
 
 torchrun \
-	--nproc_per_node $GPUS run_speech_recognition_seq2seq.py \
+	--nproc_per_node $GPUS run_speech_recognition_seq2seq_peft_test.py \
 	--model_name_or_path="openai/whisper-large-v3" \
 	--dataset_name=$data \
 	--dataset_config_name=$data_config \
