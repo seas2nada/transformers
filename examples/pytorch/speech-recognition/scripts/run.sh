@@ -1,15 +1,15 @@
 torchrun \
  	--nproc_per_node $GPUS run_speech_recognition_seq2seq.py \
-	--deepspeed="deepspeed_configs/ds_config_zero2.json" \
 	--model_name_or_path="openai/whisper-large-v3" \
 	--dataset_name=$data \
 	--dataset_config_name=$data_config \
 	--train_split_name=$train_subset \
 	--eval_split_name=$eval_subset \
-	--max_steps="30000" \
-	--output_dir="./whisper-large-KlecSpeech-fresh-max30000-batch768" \
-	--per_device_train_batch_size="96" \
-	--per_device_eval_batch_size="96" \
+	--max_steps="10000" \
+	--output_dir="./whisper-large-librispeech-max10000-batch64" \
+	--per_device_train_batch_size="16" \
+	--per_device_eval_batch_size="16" \
+	--gradient_accumulation_steps="2" \
 	--logging_steps="25" \
 	--learning_rate="1e-5" \
 	--warmup_steps="500" \
@@ -25,7 +25,7 @@ torchrun \
 	--audio_column_name=$audio_column_name \
 	--text_column_name=$text_column_name \
 	--preprocessing_num_workers=$num_proc \
-	--language="korean" \
+	--language="english" \
 	--preprocessing_only="False" \
 	--gradient_checkpointing \
 	--group_by_length \

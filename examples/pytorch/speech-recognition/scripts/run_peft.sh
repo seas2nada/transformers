@@ -7,12 +7,12 @@ torchrun \
 	--train_split_name=$train_subset \
 	--eval_split_name=$eval_subset \
 	--max_steps="10000" \
-	--output_dir="./whisper-large-KlecSpeech-peft-max10000-lr1e-3-batch256" \
+	--output_dir="./whisper-large-librispeech-peft-16bit-max10000-lr1e-4-batch64" \
 	--gradient_accumulation_steps="1" \
-	--per_device_train_batch_size="64" \
-	--per_device_eval_batch_size="64" \
+	--per_device_train_batch_size="32" \
+	--per_device_eval_batch_size="32" \
 	--logging_steps="25" \
-	--learning_rate="1e-3" \
+	--learning_rate="1e-4" \
 	--warmup_steps="500" \
 	--evaluation_strategy="steps" \
 	--eval_steps="5000" \
@@ -26,7 +26,7 @@ torchrun \
 	--audio_column_name=$audio_column_name \
 	--text_column_name=$text_column_name \
 	--preprocessing_num_workers=$num_proc \
-	--language="korean" \
+	--language="english" \
 	--preprocessing_only="False" \
 	--group_by_length \
 	--fp16 \

@@ -357,28 +357,22 @@ def main():
     raw_datasets = DatasetDict()
 
     if training_args.do_train:
-        # raw_datasets["train"] = load_dataset(
-        #     data_args.dataset_name,
-        #     data_args.dataset_config_name,
-        #     split=data_args.train_split_name,
-        #     cache_dir=model_args.cache_dir,
-        #     token=model_args.token,
-        # )
-        json_file = os.path.join(data_args.dataset_name, data_args.train_split_name + '.json')
-        ds = load_dataset("json", data_files=json_file)
-        raw_datasets["train"] = ds["train"]
+        raw_datasets["train"] = load_dataset(
+            data_args.dataset_name,
+            data_args.dataset_config_name,
+            split=data_args.train_split_name,
+            cache_dir=model_args.cache_dir,
+            token=model_args.token,
+        )
 
     if training_args.do_eval:
-        # raw_datasets["eval"] = load_dataset(
-        #     data_args.dataset_name,
-        #     data_args.dataset_config_name,
-        #     split=data_args.eval_split_name,
-        #     cache_dir=model_args.cache_dir,
-        #     token=model_args.token,
-        # )
-        json_file = os.path.join(data_args.dataset_name, data_args.eval_split_name + '.json')
-        ds = load_dataset("json", data_files=json_file)
-        raw_datasets["eval"] = ds["train"]
+        raw_datasets["eval"] = load_dataset(
+            data_args.dataset_name,
+            data_args.dataset_config_name,
+            split=data_args.eval_split_name,
+            cache_dir=model_args.cache_dir,
+            token=model_args.token,
+        )
 
     if data_args.audio_column_name not in next(iter(raw_datasets.values())).column_names:
         raise ValueError(
@@ -434,6 +428,7 @@ def main():
         token=model_args.token,
         trust_remote_code=model_args.trust_remote_code,
     )
+    model.generation_config.language = data_args.language
 
     if model.config.decoder_start_token_id is None:
         raise ValueError("Make sure that `config.decoder_start_token_id` is correctly defined")
@@ -499,7 +494,7 @@ def main():
             prepare_dataset,
             remove_columns=next(iter(raw_datasets.values())).column_names,
             num_proc=data_args.preprocessing_num_workers,
-            cache_file_names={"train": "/home/ubuntu/.cache/huggingface/datasets/KlecSpeech_cache/train.arrow", "eval": "/home/ubuntu/.cache/huggingface/datasets/KlecSpeech_cache/eval.arrow"},
+            cache_file_names={"train": "/home/ubuntu/.cache/huggingface/datasets/librispeech_cache_large/train.arrow", "eval": "/home/ubuntu/.cache/huggingface/datasets/librispeech_cache_large/eval.arrow"},
             desc="preprocess train dataset",
         )
 
@@ -532,9 +527,9 @@ def main():
 
         pred.label_ids[pred.label_ids == -100] = tokenizer.pad_token_id
 
-        pred_str = tokenizer.batch_decode(pred_ids, skip_special_tokens=True)
+        pred_str = tokenizer.batch_decode(pred_ids, skip_special_tokens=True, normalize=True)
         # we do not want to group tokens when computing the metrics
-        label_str = tokenizer.batch_decode(pred.label_ids, skip_special_tokens=True)
+        label_str = tokenizer.batch_decode(pred.label_ids, skip_special_tokens=True, normalize=True)
 
         wer = metric.compute(predictions=pred_str, references=label_str)
 

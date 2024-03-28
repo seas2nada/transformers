@@ -424,7 +424,6 @@ def main():
         token=model_args.token,
         trust_remote_code=model_args.trust_remote_code,
     )
-    use_8bit=False
     model = AutoModelForSpeechSeq2Seq.from_pretrained(
         model_args.model_name_or_path,
         config=config,
@@ -432,10 +431,9 @@ def main():
         revision=model_args.model_revision,
         token=model_args.token,
         trust_remote_code=model_args.trust_remote_code,
-        load_in_8bit=use_8bit,
+        load_in_8bit=True,
     )
-    if use_8bit:
-        model = prepare_model_for_kbit_training(model)
+    model = prepare_model_for_kbit_training(model)
 
     if model.config.decoder_start_token_id is None:
         raise ValueError("Make sure that `config.decoder_start_token_id` is correctly defined")
@@ -625,19 +623,54 @@ def main():
     results = {}
     if training_args.do_eval:
         logger.info("*** Evaluate ***")
-        metrics = trainer.evaluate(
-            metric_key_prefix="eval",
-            max_length=training_args.generation_max_length,
-            num_beams=training_args.generation_num_beams,
-            language=data_args.language,
-        )
-        max_eval_samples = (
-            data_args.max_eval_samples if data_args.max_eval_samples is not None else len(vectorized_datasets["eval"])
-        )
-        metrics["eval_samples"] = min(max_eval_samples, len(vectorized_datasets["eval"]))
 
-        trainer.log_metrics("eval", metrics)
-        trainer.save_metrics("eval", metrics)
+        from peft import PeftModel, PeftConfig
+        from transformers import WhisperForConditionalGeneration, Seq2SeqTrainer
+        from torch.utils.data import DataLoader
+        from tqdm import tqdm
+        import numpy as np
+
+        peft_model_id = model_args.model_name_or_path # Use the same model ID as before.
+        peft_config = PeftConfig.from_pretrained(peft_model_id)
+        model = WhisperForConditionalGeneration.from_pretrained(
+            peft_config.base_model_name_or_path, load_in_8bit=True
+        )
+        model = PeftModel.from_pretrained(model, peft_model_id)
+        model.config.use_cache = True
+
+        eval_dataloader = DataLoader(vectorized_datasets["eval"], batch_size=16, collate_fn=data_collator)
+        
+        predictions = []
+        references = []
+        normalized_predictions = []
+        normalized_references = []
+
+        model.eval()
+        for step, batch in enumerate(tqdm(eval_dataloader)):
+            with torch.cuda.amp.autocast():
+                with torch.no_grad():
+                    generated_tokens = (
+                        model.generate(
+                            input_features=batch["input_features"].to(training_args.device),
+                            max_new_tokens=255,
+                        )
+                        .cpu()
+                        .numpy()
+                    )
+                    labels = batch["labels"].cpu().numpy()
+                    labels = np.where(labels != -100, labels, processor.tokenizer.pad_token_id)
+                    decoded_preds = processor.tokenizer.batch_decode(generated_tokens, skip_special_tokens=True, normalize=True)
+                    decoded_labels = processor.tokenizer.batch_decode(labels, skip_special_tokens=True, normalize=True)
+                    predictions.extend(decoded_preds)
+                    references.extend(decoded_labels)
+                del generated_tokens, labels, batch
+
+        wer = metric.compute(predictions=predictions, references=references)
+        eval_metrics = {"wer": wer}
+        print(eval_metrics)
+
+        trainer.log_metrics("eval", eval_metrics)
+        trainer.save_metrics("eval", eval_metrics)
 
     # 14. Write Training Stats
     kwargs = {"finetuned_from": model_args.model_name_or_path, "tasks": "automatic-speech-recognition"}

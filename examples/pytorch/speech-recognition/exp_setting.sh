@@ -2,10 +2,10 @@
 source $PWD/../../../tools/venv/bin/activate
 
 # Environment setting
-export GPUS=4
+export GPUS=2
 
 # Experiment setting
-export data=KlecSpeech    # librispeech, commonvoice
+export data=librispeech    # librispeech, commonvoice
 num_proc=16
 extra_arguments=()
 
