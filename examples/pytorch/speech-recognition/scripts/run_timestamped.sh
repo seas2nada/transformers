@@ -9,9 +9,9 @@ torchrun \
     --cache_file_dir="/home/ubuntu/.cache/huggingface/datasets/KlecSpeech_timestamped_cache" \
     --load_from_json="True" \
 	--max_steps="10000" \
-	--output_dir="./whisper-large-KlecSpeech-fresh-max10000-batch768" \
-	--per_device_train_batch_size="96" \
-	--per_device_eval_batch_size="96" \
+	--output_dir="./whisper-large-KlecSpeech-withtimestamps-max10000-batch256" \
+	--per_device_train_batch_size="64" \
+	--per_device_eval_batch_size="64" \
 	--logging_steps="25" \
 	--learning_rate="1e-5" \
 	--warmup_steps="500" \
