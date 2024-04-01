@@ -1,10 +1,10 @@
 torchrun \
 	--nproc_per_node $GPUS run_speech_recognition_seq2seq_with_timestamps.py \
-	--model_name_or_path="openai/whisper-large-v3" \
+	--model_name_or_path="../../../../whisper_project/fresh_transformers/examples/pytorch/speech-recognition/whisper-large-KlecSpeech-fresh-max10000-batch768" \
 	--dataset_name=$data \
 	--dataset_config_name=$data_config \
 	--eval_split_name=$eval_subset \
-	--output_dir="./whisper-large-v3" \
+	--output_dir="./whisper-large-KlecSpeech-fresh-max10000-batch768" \
 	--per_device_eval_batch_size="16" \
 	--generation_max_length="225" \
 	--preprocessing_num_workers="16" \
