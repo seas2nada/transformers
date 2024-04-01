@@ -50,7 +50,7 @@ elif [[ "$data" == "KlecSpeech" ]]; then
     export language="korean"
     export num_proc=64
     extra_arguments+=" --load_from_json"
-    extra_arguments+=" --cache_file_dir ~/.cache/huggingface/datasets/KlecSpeech_cache"
+    extra_arguments+=" --cache_file_dir /home/ubuntu/.cache/huggingface/datasets/KlecSpeech_cache"
 elif [[ "$data" == "KtelSpeech" ]]; then
     export data=data/KtelSpeech
     export train_subset="train" # train
