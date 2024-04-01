@@ -251,6 +251,14 @@ class DataTrainingArguments:
             )
         },
     )
+    predict_timestamps: bool = field(
+        default=True,
+        metadata={
+            "help": (
+                "Whether to return timestamps or not."
+            )
+        },
+    )
 
 
 @dataclass
