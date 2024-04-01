@@ -5,7 +5,7 @@ source $PWD/../../../tools/venv/bin/activate
 export GPUS=8
 
 # Experiment setting
-export data=KlecSpeech    # librispeech, commonvoice
+export data=KtelSpeech    # librispeech, commonvoice
 num_proc=16
 extra_arguments=()
 
@@ -49,6 +49,17 @@ elif [[ "$data" == "KlecSpeech" ]]; then
     export audio_column_name="audio"
     export language="korean"
     export num_proc=64
-    extra_arguments+=" --from_json"
-    extra_arguments+=" --preprocessing_cache_file_dir ~/.cache/huggingface/datasets/KlecSpeech_cache"
+    extra_arguments+=" --load_from_json"
+    extra_arguments+=" --cache_file_dir ~/.cache/huggingface/datasets/KlecSpeech_cache"
+elif [[ "$data" == "KtelSpeech" ]]; then
+    export data=data/KtelSpeech
+    export train_subset="train" # train
+    export eval_subset="validation"   # test
+    export text_column_name="text"
+    export audio_column_name="audio"
+    export language="korean"
+    export num_proc=64
+    extra_arguments+=" --load_from_json"
+    extra_arguments+=" --preprocessing_only"
+    extra_arguments+=" --cache_file_dir ~/.cache/huggingface/datasets/KtelSpeech_cache"
 fi

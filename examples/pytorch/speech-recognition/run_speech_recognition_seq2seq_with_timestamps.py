@@ -251,6 +251,24 @@ class DataTrainingArguments:
             )
         },
     )
+    predict_timestamps: bool = field(
+        default=True,
+        metadata={
+            "help": (
+                "Whether to return timestamps or not."
+            )
+        },
+    )
+    
+    # Decoding args
+    log_file_name: str = field(
+        default='decoding_log.txt',
+        metadata={"help": "Log for decoded results."},
+    )
+    eval_metric: str =field(
+        default='wer',
+        metadata={"help": "ASR evaluation metric."},
+    )
 
 
 @dataclass
@@ -458,6 +476,10 @@ def main():
     if model.config.decoder_start_token_id is None:
         raise ValueError("Make sure that `config.decoder_start_token_id` is correctly defined")
 
+    model.generation_config.language = data_args.language
+    model.generation_config.task = data_args.task
+    model.generation_config.forced_decoder_ids = None
+
     if model_args.freeze_feature_encoder:
         model.freeze_feature_encoder()
 
@@ -467,7 +489,7 @@ def main():
 
     if data_args.language is not None:
         # We only need to set the task id when the language is specified (i.e. in a multilingual setting)
-        tokenizer.set_prefix_tokens(language=data_args.language, task=data_args.task, predict_timestamps=True)
+        tokenizer.set_prefix_tokens(language=data_args.language, task=data_args.task, predict_timestamps=data_args.predict_timestamps)
 
     # 6. Resample speech dataset if necessary
     # dataset_sampling_rate = next(iter(raw_datasets.values())).features[data_args.audio_column_name].sampling_rate
@@ -534,16 +556,18 @@ def main():
     def is_audio_in_length_range_and_is_timestamped(length, labels):
         return length > min_input_length and length < max_input_length and 50365 in labels
 
-    vectorized_datasets['train'] = vectorized_datasets['train'].filter(
-        is_audio_in_length_range_and_is_timestamped,
-        num_proc=num_workers,
-        input_columns=["input_length", "labels"],
-    )
-    vectorized_datasets['eval'] = vectorized_datasets['eval'].filter(
-        is_audio_in_length_range,
-        num_proc=num_workers,
-        input_columns=["input_length"],
-    )
+    if training_args.do_train:
+        vectorized_datasets['train'] = vectorized_datasets['train'].filter(
+            is_audio_in_length_range_and_is_timestamped,
+            num_proc=num_workers,
+            input_columns=["input_length", "labels"],
+        )
+    if training_args.do_eval:
+        vectorized_datasets['eval'] = vectorized_datasets['eval'].filter(
+            is_audio_in_length_range,
+            num_proc=num_workers,
+            input_columns=["input_length"],
+        )
 
     # for large datasets it is advised to run the preprocessing on a
     # single machine first with `args.preprocessing_only` since there will mostly likely
@@ -556,7 +580,7 @@ def main():
         return
 
     # 8. Load Metric
-    metric = evaluate.load("wer", cache_dir=model_args.cache_dir)
+    metric = evaluate.load(data_args.eval_metric, cache_dir=model_args.cache_dir)
 
     def compute_metrics(pred):
         pred_ids = pred.predictions
@@ -567,9 +591,31 @@ def main():
         # we do not want to group tokens when computing the metrics
         label_str = tokenizer.batch_decode(pred.label_ids, skip_special_tokens=True)
 
-        wer = metric.compute(predictions=pred_str, references=label_str)
+        # Write decoding results to a log file
+        log_file_name = data_args.log_file_name
+        log_file_prefix = data_args.eval_split_name
+        if data_args.dataset_name is not None:
+            log_file_prefix = data_args.dataset_name + "-" + log_file_prefix
+        log_file_name = log_file_prefix + "-" + log_file_name
 
-        return {"wer": wer}
+        log_file_path = os.path.join(training_args.output_dir, log_file_name)
+        pred_str_, label_str_ = [], []
+        with open(log_file_path, 'a', encoding='utf-8') as log_file:
+            for i, (pred, label) in enumerate(zip(pred_str, label_str)):
+                if len(label) < 1:
+                    continue
+                log_file.write(f"Example {i + 1}:\n")
+                log_file.write(f"  Prediction: {pred.lstrip(' ')}\n")
+                log_file.write(f"  Reference: {label}\n")
+                log_file.write("\n")
+
+                pred_str_.append(pred)
+                label_str_.append(label)
+        
+        pred_str, label_str = pred_str_, label_str_
+        score = metric.compute(predictions=pred_str, references=label_str)
+
+        return {data_args.eval_metric: score}
 
     # 9. Create a single speech processor
     # make sure all processes wait until data is saved
