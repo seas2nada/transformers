@@ -597,10 +597,14 @@ def main():
         if data_args.dataset_name is not None:
             log_file_prefix = data_args.dataset_name + "-" + log_file_prefix
         log_file_name = log_file_prefix + "-" + log_file_name
-
         log_file_path = os.path.join(training_args.output_dir, log_file_name)
+        
+        log_dir = os.path.dirname(log_file_path)
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+            
         pred_str_, label_str_ = [], []
-        with open(log_file_path, 'a', encoding='utf-8') as log_file:
+        with open(log_file_path, 'w', encoding='utf-8') as log_file:
             for i, (pred, label) in enumerate(zip(pred_str, label_str)):
                 if len(label) < 1:
                     continue
