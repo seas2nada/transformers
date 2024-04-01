@@ -14,6 +14,7 @@ torchrun \
 	--text_column_name=$text_column_name \
 	--freeze_feature_encoder="False" \
 	--predict_timestamps="False" \
+	--language=$language \
 	--ddp_timeout="999999" \
     --language=$language \
 	--group_by_length \
