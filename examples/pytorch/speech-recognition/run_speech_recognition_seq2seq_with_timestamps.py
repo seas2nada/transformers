@@ -466,6 +466,10 @@ def main():
     if model.config.decoder_start_token_id is None:
         raise ValueError("Make sure that `config.decoder_start_token_id` is correctly defined")
 
+    model.generation_config.language = data_args.language
+    model.generation_config.task = data_args.task
+    model.generation_config.forced_decoder_ids = None
+
     if model_args.freeze_feature_encoder:
         model.freeze_feature_encoder()
 
@@ -475,7 +479,7 @@ def main():
 
     if data_args.language is not None:
         # We only need to set the task id when the language is specified (i.e. in a multilingual setting)
-        tokenizer.set_prefix_tokens(language=data_args.language, task=data_args.task, predict_timestamps=True)
+        tokenizer.set_prefix_tokens(language=data_args.language, task=data_args.task, predict_timestamps=data_args.predict_timestamps)
 
     # 6. Resample speech dataset if necessary
     # dataset_sampling_rate = next(iter(raw_datasets.values())).features[data_args.audio_column_name].sampling_rate
