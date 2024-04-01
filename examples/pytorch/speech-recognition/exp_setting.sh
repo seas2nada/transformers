@@ -2,7 +2,7 @@
 source $PWD/../../../tools/venv/bin/activate
 
 # Environment setting
-export GPUS=4
+export GPUS=8
 
 # Experiment setting
 export data=KtelSpeech    # librispeech, commonvoice
