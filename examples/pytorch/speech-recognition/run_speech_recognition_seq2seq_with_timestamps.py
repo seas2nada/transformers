@@ -259,6 +259,16 @@ class DataTrainingArguments:
             )
         },
     )
+    
+    # Decoding args
+    log_file_name: str = field(
+        default='decoding_log.txt',
+        metadata={"help": "Log for decoded results."},
+    )
+    eval_metric: str =field(
+        default='wer',
+        metadata={"help": "ASR evaluation metric."},
+    )
 
 
 @dataclass
@@ -570,7 +580,7 @@ def main():
         return
 
     # 8. Load Metric
-    metric = evaluate.load("wer", cache_dir=model_args.cache_dir)
+    metric = evaluate.load(data_args.eval_metric, cache_dir=model_args.cache_dir)
 
     def compute_metrics(pred):
         pred_ids = pred.predictions
@@ -581,9 +591,31 @@ def main():
         # we do not want to group tokens when computing the metrics
         label_str = tokenizer.batch_decode(pred.label_ids, skip_special_tokens=True)
 
-        wer = metric.compute(predictions=pred_str, references=label_str)
+        # Write decoding results to a log file
+        log_file_name = data_args.log_file_name
+        log_file_prefix = data_args.eval_split_name
+        if data_args.dataset_name is not None:
+            log_file_prefix = data_args.dataset_name + "-" + log_file_prefix
+        log_file_name = log_file_prefix + "-" + log_file_name
 
-        return {"wer": wer}
+        log_file_path = os.path.join(training_args.output_dir, log_file_name)
+        pred_str_, label_str_ = [], []
+        with open(log_file_path, 'a', encoding='utf-8') as log_file:
+            for i, (pred, label) in enumerate(zip(pred_str, label_str)):
+                if len(label) < 1:
+                    continue
+                log_file.write(f"Example {i + 1}:\n")
+                log_file.write(f"  Prediction: {pred.lstrip(' ')}\n")
+                log_file.write(f"  Reference: {label}\n")
+                log_file.write("\n")
+
+                pred_str_.append(pred)
+                label_str_.append(label)
+        
+        pred_str, label_str = pred_str_, label_str_
+        score = metric.compute(predictions=pred_str, references=label_str)
+
+        return {data_args.eval_metric: score}
 
     # 9. Create a single speech processor
     # make sure all processes wait until data is saved

@@ -15,6 +15,7 @@ torchrun \
 	--freeze_feature_encoder="False" \
 	--predict_timestamps="False" \
 	--ddp_timeout="999999" \
+    --language=$language \
 	--group_by_length \
 	--predict_with_generate \
 	--fp16 \
