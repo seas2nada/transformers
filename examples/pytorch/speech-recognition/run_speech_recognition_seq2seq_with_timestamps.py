@@ -542,16 +542,18 @@ def main():
     def is_audio_in_length_range_and_is_timestamped(length, labels):
         return length > min_input_length and length < max_input_length and 50365 in labels
 
-    vectorized_datasets['train'] = vectorized_datasets['train'].filter(
-        is_audio_in_length_range_and_is_timestamped,
-        num_proc=num_workers,
-        input_columns=["input_length", "labels"],
-    )
-    vectorized_datasets['eval'] = vectorized_datasets['eval'].filter(
-        is_audio_in_length_range,
-        num_proc=num_workers,
-        input_columns=["input_length"],
-    )
+    if training_args.do_train:
+        vectorized_datasets['train'] = vectorized_datasets['train'].filter(
+            is_audio_in_length_range_and_is_timestamped,
+            num_proc=num_workers,
+            input_columns=["input_length", "labels"],
+        )
+    if training_args.do_eval:
+        vectorized_datasets['eval'] = vectorized_datasets['eval'].filter(
+            is_audio_in_length_range,
+            num_proc=num_workers,
+            input_columns=["input_length"],
+        )
 
     # for large datasets it is advised to run the preprocessing on a
     # single machine first with `args.preprocessing_only` since there will mostly likely
