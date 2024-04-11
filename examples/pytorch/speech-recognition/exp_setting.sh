@@ -3,7 +3,7 @@
 export GPUS=4
 
 # Experiment setting
-data=librispeech    # librispeech, commonvoice
+data=mls    # librispeech, commonvoice
 # export train_subset="train.100+train.360" # clean: train.100, train.360 / other: train.500
 # export eval_subset="test"   # test, validation
 # LibriSpeech
@@ -15,6 +15,14 @@ if [[ "$data" == "librispeech" ]]; then
     export audio_column_name="audio"
     export text_column_name="text"
     export language="english"
+elif [[ "$data" == "mls" ]]; then
+    export data=facebook/multilingual_librispeech
+    export data_config="german"  # clean, other 
+    export train_subset="train" # 8 langs
+    export eval_subset="validation"   # test, validation
+    export audio_column_name="audio"
+    export text_column_name="text"
+    export language="german"
 elif [[ "$data" == "cv" ]]; then
     export data=mozilla-foundation/common_voice_16_0
     export data_config="ko"  # Language ID

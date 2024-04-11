@@ -1,15 +1,14 @@
 
 python run_speech_recognition_seq2seq.py \
-	--model_name_or_path="openai/whisper-small" \
+	--model_name_or_path="openai/whisper-base" \
 	--dataset_name=$data \
 	--dataset_config_name=$data_config \
 	--language=$language \
 	--train_split_name=$train_subset \
 	--eval_split_name=$eval_subset \
-	--max_steps="5000" \
-	--output_dir="./whisper-base-libri" \
+	--num_train_epochs="5" \
+	--output_dir="./whisper-base-mls_german" \
 	--per_device_train_batch_size="16" \
-	--gradient_accumulation_steps="2" \
 	--per_device_eval_batch_size="16" \
 	--logging_steps="25" \
 	--learning_rate="1e-5" \
