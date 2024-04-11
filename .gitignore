@@ -168,4 +168,6 @@ tags
 # ruff
 .ruff_cache
 
-tools
+tools/venv
+tools/Miniconda*
+tools/activate*
