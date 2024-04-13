@@ -1,13 +1,14 @@
-
-python run_speech_recognition_seq2seq.py \
-	--model_name_or_path="openai/whisper-base" \
+torchrun \
+	--nproc_per_node $GPUS run_speech_recognition_seq2seq.py \
+	--model_name_or_path="openai/whisper-small" \
 	--dataset_name=$data \
 	--dataset_config_name=$data_config \
 	--language=$language \
 	--train_split_name=$train_subset \
 	--eval_split_name=$eval_subset \
 	--num_train_epochs="5" \
-	--output_dir="./whisper-base-mls_german" \
+	--output_dir="./whisper-small-libri_en-fzenc" \
+	--freeze_encoder="True" \
 	--per_device_train_batch_size="16" \
 	--per_device_eval_batch_size="16" \
 	--logging_steps="25" \
@@ -18,7 +19,7 @@ python run_speech_recognition_seq2seq.py \
 	--save_strategy="steps" \
 	--save_steps="1000" \
 	--generation_max_length="225" \
-	--preprocessing_num_workers="16" \
+	--preprocessing_num_workers="1" \
 	--length_column_name="input_length" \
 	--max_duration_in_seconds="30" \
 	--text_column_name=$text_column_name \

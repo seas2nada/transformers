@@ -171,3 +171,5 @@ tags
 tools/venv
 tools/Miniconda*
 tools/activate*
+
+examples/pytorch/speech-recognition/whisper-*

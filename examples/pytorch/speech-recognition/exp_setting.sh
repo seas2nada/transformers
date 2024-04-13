@@ -3,7 +3,7 @@
 export GPUS=4
 
 # Experiment setting
-data=mls    # librispeech, commonvoice
+data=librispeech    # librispeech, commonvoice
 # export train_subset="train.100+train.360" # clean: train.100, train.360 / other: train.500
 # export eval_subset="test"   # test, validation
 # LibriSpeech
