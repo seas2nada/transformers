@@ -6,9 +6,11 @@ torchrun \
 	--language=$language \
 	--train_split_name=$train_subset \
 	--eval_split_name=$eval_subset \
+	--metric_for_best_model="wer" \
+	--load_best_model_at_end="True" \
 	--num_train_epochs="5" \
-	--output_dir="./whisper-small-libri_en-fzenc" \
-	--freeze_encoder="True" \
+	--output_dir="./whisper-small-mls_german_neftune10" \
+	--neftune_noise_alpha="10" \
 	--per_device_train_batch_size="16" \
 	--per_device_eval_batch_size="16" \
 	--logging_steps="25" \
@@ -24,6 +26,7 @@ torchrun \
 	--max_duration_in_seconds="30" \
 	--text_column_name=$text_column_name \
 	--freeze_feature_encoder="False" \
+	--ddp_timeout="99999999" \
 	--gradient_checkpointing \
 	--group_by_length \
 	--fp16 \
