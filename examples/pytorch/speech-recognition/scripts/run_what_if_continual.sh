@@ -1,13 +1,13 @@
 torchrun \
  	--nproc_per_node $GPUS run_speech_recognition_seq2seq_with_timestamps.py \
-	--model_name_or_path="openai/whisper-large-v3" \
+	--model_name_or_path="/exps/whisper-large-KtelSpeech-TS-2epoch-batch256" \
 	--dataset_name=$data \
 	--dataset_config_name=$data_config \
 	--train_split_name=$train_subset \
 	--eval_split_name=$eval_subset \
 	--num_train_epochs="2" \
     --load_from_json="True" \
-	--output_dir="./whisper-large-KsponSpeech-TS-withdedup-2epoch-batch256" \
+	--output_dir="./whisper-large-Ktel2Klec" \
 	--eval_metric="wer" \
 	--metric_for_best_model="wer" \
 	--load_best_model_at_end="True" \

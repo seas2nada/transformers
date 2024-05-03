@@ -236,6 +236,33 @@ class DataTrainingArguments:
         metadata={"help": "Task, either `transcribe` for speech recognition or `translate` for speech translation."},
     )
 
+    cache_file_dir: str = field(
+        default=None,
+        metadata={
+            "help": (
+                "Where do you want to store the preprocessed datasets."
+            )
+        },
+    )
+    load_from_json: bool = field(
+        default=False,
+        metadata={
+            "help": (
+                "Whether or not to load the dataset from a prepared json format file. "
+            )
+        },
+    )
+    
+    # Decoding args
+    log_file_name: str = field(
+        default='decoding_log.txt',
+        metadata={"help": "Log for decoded results."},
+    )
+    eval_metric: str =field(
+        default='wer',
+        metadata={"help": "ASR evaluation metric."},
+    )
+
 
 @dataclass
 class DataCollatorSpeechSeq2SeqWithPadding:
@@ -357,28 +384,32 @@ def main():
     raw_datasets = DatasetDict()
 
     if training_args.do_train:
-        # raw_datasets["train"] = load_dataset(
-        #     data_args.dataset_name,
-        #     data_args.dataset_config_name,
-        #     split=data_args.train_split_name,
-        #     cache_dir=model_args.cache_dir,
-        #     token=model_args.token,
-        # )
-        json_file = os.path.join(data_args.dataset_name, data_args.train_split_name + '.json')
-        ds = load_dataset("json", data_files=json_file)
-        raw_datasets["train"] = ds["train"]
+        if data_args.load_from_json:
+            json_file = os.path.join(data_args.dataset_name, data_args.train_split_name + '.json')
+            ds = load_dataset("json", data_files=json_file)
+            raw_datasets["train"] = ds["train"]
+        else:
+            raw_datasets["train"] = load_dataset(
+                data_args.dataset_name,
+                data_args.dataset_config_name,
+                split=data_args.train_split_name,
+                cache_dir=model_args.cache_dir,
+                token=model_args.token,
+            )
 
     if training_args.do_eval:
-        # raw_datasets["eval"] = load_dataset(
-        #     data_args.dataset_name,
-        #     data_args.dataset_config_name,
-        #     split=data_args.eval_split_name,
-        #     cache_dir=model_args.cache_dir,
-        #     token=model_args.token,
-        # )
-        json_file = os.path.join(data_args.dataset_name, data_args.eval_split_name + '.json')
-        ds = load_dataset("json", data_files=json_file)
-        raw_datasets["eval"] = ds["train"]
+        if data_args.load_from_json:
+            json_file = os.path.join(data_args.dataset_name, data_args.eval_split_name + '.json')
+            ds = load_dataset("json", data_files=json_file)
+            raw_datasets["eval"] = ds["train"]
+        else:
+            raw_datasets["eval"] = load_dataset(
+            data_args.dataset_name,
+            data_args.dataset_config_name,
+            split=data_args.eval_split_name,
+            cache_dir=model_args.cache_dir,
+            token=model_args.token,
+        )
 
     if data_args.audio_column_name not in next(iter(raw_datasets.values())).column_names:
         raise ValueError(
@@ -438,6 +469,10 @@ def main():
     if model.config.decoder_start_token_id is None:
         raise ValueError("Make sure that `config.decoder_start_token_id` is correctly defined")
 
+    model.generation_config.language = data_args.language
+    model.generation_config.task = data_args.task
+    model.generation_config.forced_decoder_ids = None
+
     if model_args.freeze_feature_encoder:
         model.freeze_feature_encoder()
 
@@ -494,12 +529,15 @@ def main():
         batch["labels"] = tokenizer(input_str).input_ids
         return batch
 
+    if data_args.cache_file_dir is not None and not os.path.exists(data_args.cache_file_dir):
+        os.makedirs(data_args.cache_file_dir)
+
     with training_args.main_process_first(desc="dataset map pre-processing"):
         vectorized_datasets = raw_datasets.map(
             prepare_dataset,
             remove_columns=next(iter(raw_datasets.values())).column_names,
             num_proc=data_args.preprocessing_num_workers,
-            cache_file_names={"train": "/home/ubuntu/.cache/huggingface/datasets/KlecSpeech_cache/train.arrow", "eval": "/home/ubuntu/.cache/huggingface/datasets/KlecSpeech_cache/eval.arrow"},
+            cache_file_names={"train": os.path.join(data_args.cache_file_dir, "train.arrow"), "eval": os.path.join(data_args.cache_file_dir, "eval.arrow")},
             desc="preprocess train dataset",
         )
 
@@ -525,7 +563,7 @@ def main():
         return
 
     # 8. Load Metric
-    metric = evaluate.load("wer", cache_dir=model_args.cache_dir)
+    metric = evaluate.load(data_args.eval_metric, cache_dir=model_args.cache_dir)
 
     def compute_metrics(pred):
         pred_ids = pred.predictions
@@ -536,9 +574,35 @@ def main():
         # we do not want to group tokens when computing the metrics
         label_str = tokenizer.batch_decode(pred.label_ids, skip_special_tokens=True)
 
-        wer = metric.compute(predictions=pred_str, references=label_str)
+        # Write decoding results to a log file
+        log_file_name = data_args.log_file_name
+        log_file_prefix = data_args.eval_split_name
+        if data_args.dataset_name is not None:
+            log_file_prefix = data_args.dataset_name + "-" + log_file_prefix
+        log_file_name = log_file_prefix + "-" + log_file_name
+        log_file_path = os.path.join(training_args.output_dir, log_file_name)
+        
+        log_dir = os.path.dirname(log_file_path)
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+            
+        pred_str_, label_str_ = [], []
+        with open(log_file_path, 'w', encoding='utf-8') as log_file:
+            for i, (pred, label) in enumerate(zip(pred_str, label_str)):
+                if len(label) < 1:
+                    continue
+                log_file.write(f"Example {i + 1}:\n")
+                log_file.write(f"  Prediction: {pred.lstrip(' ')}\n")
+                log_file.write(f"  Reference: {label}\n")
+                log_file.write("\n")
 
-        return {"wer": wer}
+                pred_str_.append(pred)
+                label_str_.append(label)
+        
+        pred_str, label_str = pred_str_, label_str_
+        score = metric.compute(predictions=pred_str, references=label_str)
+
+        return {data_args.eval_metric: score}
 
     # 9. Create a single speech processor
     # make sure all processes wait until data is saved

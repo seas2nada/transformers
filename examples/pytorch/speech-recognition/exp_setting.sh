@@ -5,7 +5,7 @@ source $PWD/../../../tools/venv/bin/activate
 export GPUS=8
 
 # Experiment setting
-export data=KtelSpeech    # librispeech, commonvoice
+export data=KlecSpeech    # librispeech, commonvoice
 num_proc=16
 extra_arguments=()
 
@@ -25,15 +25,16 @@ elif [[ "$data" == "cv" ]]; then
     export audio_column_name="audio"
     export text_column_name="sentence"
     export language="korean"
-elif [[ "$data" == "ksponspeech" ]]; then
+elif [[ "$data" == "KsponSpeech" ]]; then
+	export data=data/KsponSpeech
     export train_subset="train" # train
-    export eval_subset="validation"   # test, validation
-    export text_column_name="sentence"
+    export eval_subset="dev"   # test, validation
+    export text_column_name="text"
     export audio_column_name="audio"
     export language="korean"
-    export num_proc=128
-    export data_dir="/home/ubuntu/Workspace/DB/LibriSpeech/KsponSpeech"
-    export from_local_disk="/home/ubuntu/Workspace/DB/LibriSpeech/KsponSpeech/arrows"
+    export num_proc=64
+    extra_arguments+=" --load_from_json"
+    extra_arguments+=" --cache_file_dir /home/ubuntu/.cache/huggingface/datasets/KsponSpeech_cache"
 elif [[ "$data" == "zeroth" ]]; then
     export data=Bingsu/zeroth-korean
     export train_subset="train" # train
@@ -51,6 +52,16 @@ elif [[ "$data" == "KlecSpeech" ]]; then
     export num_proc=64
     extra_arguments+=" --load_from_json"
     extra_arguments+=" --cache_file_dir /home/ubuntu/.cache/huggingface/datasets/KlecSpeech_cache"
+elif [[ "$data" == "KconfSpeech" ]]; then
+    export data=data/KconfSpeech
+    export train_subset="train" # train
+    export eval_subset="validation"   # test
+    export text_column_name="text"
+    export audio_column_name="audio"
+    export language="korean"
+    export num_proc=64
+    extra_arguments+=" --load_from_json"
+    extra_arguments+=" --cache_file_dir /home/ubuntu/Workspace/DB/korean_db/huggingface/cache/KconfSpeech_processed_cache"
 elif [[ "$data" == "KtelSpeech" ]]; then
     export data=data/KtelSpeech
     export train_subset="train" # train
@@ -60,5 +71,15 @@ elif [[ "$data" == "KtelSpeech" ]]; then
     export language="korean"
     export num_proc=64
     extra_arguments+=" --load_from_json"
-    extra_arguments+=" --cache_file_dir /home/ubuntu/.cache/huggingface/datasets/KtelSpeech_cache"
+    extra_arguments+=" --cache_file_dir /home/ubuntu/Workspace/DB/korean_db/huggingface/cache/KtelSpeech_cache_withdedup"
+elif [[ "$data" == "KlowtelSpeech" ]]; then
+    export data=data/KlowtelSpeech
+    export train_subset="train" # train
+    export eval_subset="validation"   # test
+    export text_column_name="text"
+    export audio_column_name="audio"
+    export language="korean"
+    export num_proc=64
+    extra_arguments+=" --load_from_json"
+    extra_arguments+=" --cache_file_dir /home/ubuntu/Workspace/DB/korean_db/huggingface/cache/KlowtelSpeech_cache"
 fi

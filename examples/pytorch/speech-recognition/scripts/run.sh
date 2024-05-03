@@ -1,15 +1,18 @@
 torchrun \
  	--nproc_per_node $GPUS run_speech_recognition_seq2seq.py \
-	--deepspeed="deepspeed_configs/ds_config_zero2.json" \
 	--model_name_or_path="openai/whisper-large-v3" \
 	--dataset_name=$data \
 	--dataset_config_name=$data_config \
 	--train_split_name=$train_subset \
 	--eval_split_name=$eval_subset \
-	--max_steps="30000" \
-	--output_dir="./whisper-large-KlecSpeech-fresh-max30000-batch768" \
-	--per_device_train_batch_size="96" \
-	--per_device_eval_batch_size="96" \
+	--num_train_epochs="2" \
+	--output_dir="./whisper-large-KlowtelSpeech-TS-withdedup-2epoch-batch256" \
+	--load_from_json="True" \
+	--eval_metric="wer" \
+	--metric_for_best_model="wer" \
+	--load_best_model_at_end="True" \
+	--per_device_train_batch_size="32" \
+	--per_device_eval_batch_size="32" \
 	--logging_steps="25" \
 	--learning_rate="1e-5" \
 	--warmup_steps="500" \
@@ -20,7 +23,7 @@ torchrun \
 	--generation_max_length="225" \
 	--length_column_name="input_length" \
 	--max_duration_in_seconds="30" \
-	--ddp_timeout "86400" \
+	--ddp_timeout "9999999" \
 	--freeze_feature_encoder "False" \
 	--audio_column_name=$audio_column_name \
 	--text_column_name=$text_column_name \
@@ -34,4 +37,5 @@ torchrun \
 	--do_train \
 	--do_eval \
 	--predict_with_generate \
-	--use_auth_token
+	--use_auth_token \
+	$extra_arguments
